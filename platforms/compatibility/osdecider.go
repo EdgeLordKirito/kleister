@@ -9,7 +9,7 @@ import (
 	"github.com/EdgeLordKirito/wallpapersetter/internal/appinfo"
 )
 
-func GetCurrentOs() string {
+func GetCurrentOS() string {
 	return runtime.GOOS
 }
 

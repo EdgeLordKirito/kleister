@@ -7,7 +7,9 @@ import (
 )
 
 type Config struct {
+	//TODO: make this an array for multiple dir support
 	WallpaperDir string `toml:"wallpapers"`
+	Backend      string `toml:"backend"`
 }
 
 func Marshal(config Config) ([]byte, error) {

@@ -1,7 +1,9 @@
-package imagevalidator
+package filevalidator
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -21,12 +23,24 @@ var universalImageExtensionsSet = map[string]bool{
 }
 
 var ErrNotAnImage error = errors.New("File is not of an Supported Image Type")
+var ErrPathContainsSpace error = errors.New("Filepath contains atleast one spacecharacter")
 
 // IsImageFile checks if the given image path is a valid image file
 func IsImageFile(imagePath string) bool {
 	return isExtensionValid(imagePath, imageExtensionsSet)
 }
 
+func IsValidFile(input string) error {
+	_, err := os.Stat(input)
+	if err != nil {
+		return err
+	}
+	if !IsImageFile(input) {
+		return ErrNotAnImage
+	}
+
+	return nil
+}
 func IsUniversallySupported(imagePath string) bool {
 	return isExtensionValid(imagePath, universalImageExtensionsSet)
 }
@@ -41,4 +55,9 @@ func isExtensionValid(imagePath string, extSet map[string]bool) bool {
 	}
 
 	return false
+}
+
+func QuotePath(input string) string {
+	// Ensure the input string is enclosed in double quotes.
+	return fmt.Sprintf(`"%s"`, input)
 }

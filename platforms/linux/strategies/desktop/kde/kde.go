@@ -4,21 +4,26 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
-	"github.com/EdgeLordKirito/wallpapersetter/internal/imagevalidator"
+	"github.com/EdgeLordKirito/wallpapersetter/internal/filevalidator"
 )
 
 func SetWallpaper(input string) error {
-	if !imagevalidator.IsImageFile(input) {
-		return imagevalidator.ErrNotAnImage
+	abs, err := filepath.Abs(input)
+	if err != nil {
+		log.Fatalf("Failed to get absolute path: %v", err)
+	}
+	if err := filevalidator.IsValidFile(abs); err != nil {
+		return fmt.Errorf("Unable to set Wallpaper '%s' reason '%v'", abs, err)
 	}
 	// Build the qdbus command in chunks to avoid long lines
 	qdbusCommand := buildQdbusCommand(input)
 
 	// Execute the qdbus command
 	cmd := exec.Command("bash", "-c", qdbusCommand)
-	err := cmd.Run()
+	err = cmd.Run()
 
 	// Log and return the error if something goes wrong
 	if err != nil {
@@ -31,6 +36,7 @@ func SetWallpaper(input string) error {
 }
 
 func buildQdbusCommand(input string) string {
+	uri := filevalidator.QuotePath("file://" + input)
 	var sb strings.Builder
 
 	// Build the qdbus command using a string builder
@@ -40,7 +46,7 @@ func buildQdbusCommand(input string) string {
 	sb.WriteString("    d = allDesktops[i];")
 	sb.WriteString("    d.wallpaperPlugin = 'org.kde.image';")
 	sb.WriteString("    d.currentConfigGroup = Array('Wallpaper', 'org.kde.image', 'General');")
-	sb.WriteString(fmt.Sprintf("    d.writeConfig('Image', 'file://%s')", input))
+	sb.WriteString(fmt.Sprintf("    d.writeConfig('Image', '%s')", uri))
 	sb.WriteString("}\"")
 
 	return sb.String()
