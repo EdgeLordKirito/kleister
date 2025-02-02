@@ -16,7 +16,7 @@ var (
 	ErrUnsupportedOS error = errors.New("Encountered Unsupported OS")
 )
 
-func GetBackendStrategy(conf config.Config) WallpaperSetter {
+func GetBackendStrategy(conf *config.Config) WallpaperSetter {
 	os := strings.ToLower(compatibility.GetCurrentOS())
 	var strategy SetWallpaperFunc
 	switch os {
