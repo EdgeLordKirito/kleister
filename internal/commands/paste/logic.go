@@ -22,40 +22,49 @@ func Run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("Unable to read Config %v", err)
 	}
-	strategy := independent.GetBackendStrategy(conf)
 	pathType := determinePathType(path)
 	switch pathType {
 	case "directory":
-		return handleDirectory(conf, strategy)
+		return handleDirectory(conf)
 	case "file":
-		return handleFile(conf, strategy)
+		return handleFile(conf)
 	case "url":
-		return handleUrl(conf, strategy)
+		return handleUrl(conf)
 	default:
 		return ErrInvalidPathType
 	}
 }
 
-func handleDirectory(conf *config.Config, strategy independent.WallpaperSetter) error {
+func handleDirectory(mConf *config.MainConfig) error {
 	//either load the dir or load the config dirs
-	var dirs []string = conf.WallpaperDirs
+	strategy := independent.GetBackendStrategy(mConf)
+	sysConf := mConf.GetOSConfig()
+	var dirs []string = sysConf.Dirs()
 	if path != "" {
 		dirs = []string{path}
 	}
-	_ = dirs
-	//build the iterator
-	file := ""
+	files, _, err := filevalidator.CollectImageFiles(dirs)
+	if err != nil {
+		return fmt.Errorf(
+			"Could not Collect Image files from the directories reason '%v'", err)
+	}
+	file, err := filevalidator.PickRandomFile(files)
+	if err != nil {
+		return fmt.Errorf("Could not pick random File reason '%v'", err)
+	}
 	return strategy.Set(file)
 }
 
-func handleFile(conf *config.Config, strategy independent.WallpaperSetter) error {
-	_ = conf
+func handleFile(mConf *config.MainConfig) error {
+	_ = mConf
+	strategy := independent.GetBackendStrategy(mConf)
 	return strategy.Set(path)
 }
 
-func handleUrl(conf *config.Config, strategy independent.WallpaperSetter) error {
+func handleUrl(mConf *config.MainConfig) error {
 	// TODO: download the file from the url
-	_, _ = conf, strategy
+	_ = mConf
+	//strategy := independent.GetBackendStrategy(mConf)
 	return ErrUnimplementedUrl
 }
 

@@ -6,8 +6,8 @@ import (
 	"github.com/EdgeLordKirito/wallpapersetter/platforms/linux/strategies/desktop"
 )
 
-func GetBackendStrategy(conf *config.Config) func(string) error {
-	if conf.Backend != "" {
+func GetBackendStrategy(conf *config.Linux) func(string) error {
+	if conf.Backend() != "" {
 		return bgsetter.GetBackendStrategy(conf)
 	}
 	return desktop.GetDEBackendStrategy(conf)

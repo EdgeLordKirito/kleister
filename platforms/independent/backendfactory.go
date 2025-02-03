@@ -16,16 +16,16 @@ var (
 	ErrUnsupportedOS error = errors.New("Encountered Unsupported OS")
 )
 
-func GetBackendStrategy(conf *config.Config) WallpaperSetter {
+func GetBackendStrategy(conf *config.MainConfig) WallpaperSetter {
 	os := strings.ToLower(compatibility.GetCurrentOS())
 	var strategy SetWallpaperFunc
 	switch os {
 	case "windows":
-		strategy = windows.GetBackendStrategy(conf)
+		strategy = windows.GetBackendStrategy(&conf.Windows)
 	case "darwin":
-		strategy = darwin.GetBackendStrategy(conf)
+		strategy = darwin.GetBackendStrategy(&conf.Darwin)
 	case "linux":
-		strategy = linux.GetBackendStrategy(conf)
+		strategy = linux.GetBackendStrategy(&conf.Linux)
 	default:
 		strategy = unsupported(os)
 	}

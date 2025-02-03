@@ -9,8 +9,8 @@ import (
 	"github.com/EdgeLordKirito/wallpapersetter/platforms/linux/strategies/bgsetter/nitrogen"
 )
 
-func GetBackendStrategy(conf *config.Config) func(string) error {
-	lower := strings.ToLower(conf.Backend)
+func GetBackendStrategy(conf *config.Linux) func(string) error {
+	lower := strings.ToLower(conf.Backend())
 	switch lower {
 	case "feh":
 		return feh.SetWallpaper

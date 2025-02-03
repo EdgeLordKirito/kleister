@@ -18,7 +18,7 @@ func unsupported(de string) func(string) error {
 	}
 }
 
-func GetDEBackendStrategy(conf *config.Config) func(string) error {
+func GetDEBackendStrategy(conf *config.Linux) func(string) error {
 	de := strings.ToLower(getDesktopEnvironment())
 	switch de {
 	case "gnome":
