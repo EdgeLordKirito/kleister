@@ -3,10 +3,16 @@ package paste
 import (
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/EdgeLordKirito/wallpapersetter/internal/config"
 	"github.com/EdgeLordKirito/wallpapersetter/internal/filevalidator"
+	"github.com/EdgeLordKirito/wallpapersetter/platforms/compatibility"
 	"github.com/EdgeLordKirito/wallpapersetter/platforms/independent"
 	"github.com/spf13/cobra"
 )
@@ -14,7 +20,6 @@ import (
 var (
 	ErrInvalidPathType error = errors.New(
 		"Invalid Pathtype expecting valid File Path or Directory Path or valid Url")
-	ErrUnimplementedUrl error = errors.New("Url support is not yet implemented")
 )
 
 func Run(cmd *cobra.Command, args []string) error {
@@ -28,8 +33,6 @@ func Run(cmd *cobra.Command, args []string) error {
 		return handleDirectory(conf)
 	case "file":
 		return handleFile(conf)
-	case "url":
-		return handleUrl(conf)
 	default:
 		return ErrInvalidPathType
 	}
@@ -56,16 +59,8 @@ func handleDirectory(mConf *config.MainConfig) error {
 }
 
 func handleFile(mConf *config.MainConfig) error {
-	_ = mConf
 	strategy := independent.GetBackendStrategy(mConf)
 	return strategy.Set(path)
-}
-
-func handleUrl(mConf *config.MainConfig) error {
-	// TODO: download the file from the url
-	_ = mConf
-	//strategy := independent.GetBackendStrategy(mConf)
-	return ErrUnimplementedUrl
 }
 
 func determinePathType(input string) string {

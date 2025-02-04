@@ -18,7 +18,7 @@ func Command() *cobra.Command {
 	}
 
 	pasteCmd.Flags().StringVarP(&path, "input",
-		"i", "", "file path, directory path, or URL")
+		"i", "", "file path or directory path")
 	pasteCmd.Flags().StringVarP(&ordering, "output",
 		"o", "random", "Ordering mode")
 

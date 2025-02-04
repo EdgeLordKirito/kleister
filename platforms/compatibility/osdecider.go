@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 
 	"github.com/EdgeLordKirito/wallpapersetter/internal/appinfo"
@@ -14,7 +15,7 @@ func GetCurrentOS() string {
 }
 
 func GetAppConfigPath() string {
-	return path.Join(GetAppConfigDir(), appinfo.AppName+".toml")
+	return filepath.Join(GetAppConfigDir(), appinfo.AppName+".toml")
 
 }
 
@@ -23,11 +24,11 @@ func GetAppConfigDir() string {
 	if err != nil {
 		log.Fatalf("Error determining config directory: %v\n", err)
 	}
-	return path.Join(configDir, appinfo.AppName)
+	return filepath.Join(configDir, appinfo.AppName)
 }
 
 func GetAppExtensionConfigDir() string {
-	return path.Join(GetAppConfigDir(), "extensions")
+	return filepath.Join(GetAppConfigDir(), "extensions")
 }
 
 func GetAppCacheDir() string {
@@ -35,7 +36,12 @@ func GetAppCacheDir() string {
 	if err != nil {
 		log.Fatalf("Error determining cache directory: %v\n", err)
 	}
-	return path.Join(cacheDir, appinfo.AppName)
+	return filepath.Join(cacheDir, appinfo.AppName)
+}
+
+func GetURLCacheDir() string {
+	dir := GetAppCacheDir()
+	return filepath.Join(dir, "url")
 }
 
 func GetAppBitmapCacheDir() string {
