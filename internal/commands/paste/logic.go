@@ -3,18 +3,11 @@ package paste
 import (
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/EdgeLordKirito/wallpapersetter/internal/config"
 	"github.com/EdgeLordKirito/wallpapersetter/internal/filevalidator"
-	"github.com/EdgeLordKirito/wallpapersetter/platforms/compatibility"
 	"github.com/EdgeLordKirito/wallpapersetter/platforms/independent"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var (

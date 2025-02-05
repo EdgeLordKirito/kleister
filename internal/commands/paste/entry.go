@@ -3,8 +3,7 @@ package paste
 import "github.com/spf13/cobra"
 
 var (
-	path     string
-	ordering string
+	path string
 )
 
 func Command() *cobra.Command {
@@ -19,8 +18,5 @@ func Command() *cobra.Command {
 
 	pasteCmd.Flags().StringVarP(&path, "input",
 		"i", "", "file path or directory path")
-	pasteCmd.Flags().StringVarP(&ordering, "output",
-		"o", "random", "Ordering mode")
-
 	return pasteCmd
 }
