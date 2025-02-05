@@ -9,6 +9,7 @@ import (
 )
 
 var rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+var last string
 
 func CollectImageFiles(directories []string) ([]string, int64, error) {
 	var imageFiles []string
@@ -34,5 +35,19 @@ func PickRandomFile(files []string) (string, error) {
 	if len(files) == 0 {
 		return "", fmt.Errorf("No Files in directories") // No image files found
 	}
-	return files[rng.Intn(len(files))], nil
+	if len(files) == 1 {
+		return files[0], fmt.Errorf("Singular File found in directories")
+	}
+	file := files[rng.Intn(len(files))]
+	if file == last {
+		//rerun until new file is selected
+		for i := 0; i < 5; i++ {
+			file = files[rng.Intn(len(files))]
+			if file != last {
+				break
+			}
+		}
+	}
+	last = file
+	return file, nil
 }
