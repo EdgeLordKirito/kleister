@@ -11,6 +11,7 @@ import (
 
 	"github.com/EdgeLordKirito/wallpapersetter/internal/config"
 	"github.com/EdgeLordKirito/wallpapersetter/internal/filevalidator"
+	"github.com/EdgeLordKirito/wallpapersetter/package/statusserver"
 	"github.com/EdgeLordKirito/wallpapersetter/platforms/independent"
 	"github.com/spf13/cobra"
 )
@@ -40,9 +41,17 @@ func Run(cmd *cobra.Command, args []string) error {
 	}
 
 	ctx, cancel, wg, errChan, signalChan := setupTicker()
-	wg.Add(1)
-	defer wg.Wait()
+	cBundle := statusserver.ContextBundle{
+		Context:    ctx,
+		CancelFunc: cancel,
+		Waiter:     wg}
+	settings := statusserver.ServerSettings{
+		Adress: statusserver.DefaultAdress,
+		Auth:   statusserver.TruthyAuth{}}
+	wg.Add(2)
+	go statusserver.SetupStatusServer(cBundle, settings)
 	go startTicker(ctx, wg, errChan, dur, dirs, strategy)
+	defer wg.Wait()
 
 	select {
 	case sig := <-signalChan:
@@ -52,6 +61,8 @@ func Run(cmd *cobra.Command, args []string) error {
 		fmt.Println("Ticker stopped due to error:", err)
 		cancel()
 		return err
+	case <-ctx.Done(): // Listen for context cancellation
+		fmt.Println("Context canceled. Shutting down...")
 	}
 	wg.Wait()
 	fmt.Println("Program exiting...")
