@@ -8,10 +8,21 @@ import (
 	"time"
 )
 
-// jsonResponse represents the JSON structure for /running
-type jsonResponse struct {
+// runningResponse represents the JSON structure for /running
+type runningResponse struct {
 	RunningSince time.Time `json:"running_since"`
 	Status       bool      `json:"status"`
+}
+
+type stopResponse struct {
+	Message    string `json:"message"`
+	Uptime     string `json:"uptime"`
+	UptimeSecs int    `json:"uptime_secs"`
+}
+
+type errorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
 }
 
 // SetupStatusServer starts the HTTP server with context handling
@@ -34,7 +45,7 @@ func SetupStatusServer(ctxBundle ContextBundle, settings ServerSettings) {
 		state.mu.Lock()
 		defer state.mu.Unlock()
 
-		resp := jsonResponse{
+		resp := runningResponse{
 			RunningSince: state.runningSince,
 			Status:       state.running,
 		}
@@ -49,13 +60,29 @@ func SetupStatusServer(ctxBundle ContextBundle, settings ServerSettings) {
 		defer state.mu.Unlock()
 
 		if !settings.Auth.Authenticate(r) {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			response := errorResponse{
+				Error:   "unauthorized",
+				Message: "Authentication failed",
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(response) // Send JSON error response
 			return
 		}
 
 		state.running = false
+		uptime := time.Since(state.runningSince) // Calculate the uptime
+
+		// Create a response struct
+		response := stopResponse{
+			Message:    "Server shutting down",
+			Uptime:     uptime.String(),
+			UptimeSecs: int(uptime.Seconds()),
+		}
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"message": "Server shutting down"}`))
+		json.NewEncoder(w).Encode(response) // Encode the response struct as JSON
 
 		fmt.Println("Shutdown triggered via /stop endpoint")
 		ctxBundle.CancelFunc()
