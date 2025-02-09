@@ -27,44 +27,33 @@ func Run(cmd *cobra.Command, args []string) error {
 	}
 	strategy := independent.GetBackendStrategy(conf)
 	sysConf := conf.GetOSConfig()
-	var dirs []string = sysConf.Dirs()
-	_, _ = strategy, dirs
-	if path != "" {
-		info, err := os.Stat(path)
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			return fmt.Errorf("Need to provide an Directory to schedule")
-		}
-		dirs = []string{path}
+	dirs, err := getDirs(sysConf, path)
+	if err != nil {
+		return fmt.Errorf("Could not get list of directories reason '%v'", err)
 	}
-
-	ctx, cancel, wg, errChan, signalChan := setupTicker()
-	cBundle := statusserver.ContextBundle{
-		Context:    ctx,
-		CancelFunc: cancel,
-		Waiter:     wg}
+	tickSync := setupTicker()
+	cBundle, err := newContextBundle(tickSync)
 	settings := statusserver.ServerSettings{
 		Adress: statusserver.DefaultAdress,
 		Auth:   statusserver.TruthyAuth{}}
-	wg.Add(2)
-	go statusserver.SetupStatusServer(cBundle, settings)
-	go startTicker(ctx, wg, errChan, dur, dirs, strategy)
-	defer wg.Wait()
+	tickSync.Waiter.Add(1)
+	go statusserver.SetupStatusServer(*cBundle, settings)
+	tickSync.Waiter.Add(1)
+	go startTicker(tickSync, dur, dirs, strategy)
+	defer tickSync.Waiter.Wait()
 
 	select {
-	case sig := <-signalChan:
+	case sig := <-tickSync.SignalChannel:
 		fmt.Println("Received signal:", sig)
-		cancel()
-	case err := <-errChan:
+		tickSync.Cancel()
+	case err := <-tickSync.ErrChannel:
 		fmt.Println("Ticker stopped due to error:", err)
-		cancel()
+		tickSync.Cancel()
 		return err
-	case <-ctx.Done(): // Listen for context cancellation
+	case <-tickSync.Context.Done(): // Listen for context cancellation
 		fmt.Println("Context canceled. Shutting down...")
 	}
-	wg.Wait()
+	tickSync.Waiter.Wait()
 	fmt.Println("Program exiting...")
 	return nil
 }
@@ -81,9 +70,9 @@ func RunIter(dirs []string, strategy independent.WallpaperSetter) error {
 	return strategy.Set(file)
 }
 
-func startTicker(ctx context.Context, wg *sync.WaitGroup, errChan chan<- error, pause time.Duration,
+func startTicker(tickSync *tickerSync, pause time.Duration,
 	dirs []string, strat independent.WallpaperSetter) {
-	defer wg.Done()
+	defer tickSync.Waiter.Done()
 	ticker := time.NewTicker(pause)
 	defer ticker.Stop()
 
@@ -91,20 +80,20 @@ func startTicker(ctx context.Context, wg *sync.WaitGroup, errChan chan<- error, 
 		select {
 		case <-ticker.C:
 			if err := RunIter(dirs, strat); err != nil {
-				errChan <- err
+				tickSync.ErrChannel <- err
 				return
 			}
-		case <-ctx.Done():
+		case <-tickSync.Context.Done():
 			fmt.Println("Ticker stopping...")
 			return
 		}
-		if ctx.Err() != nil {
+		if tickSync.Context.Err() != nil {
 			break
 		}
 	}
 }
 
-func setupTicker() (context.Context, context.CancelFunc, *sync.WaitGroup, chan error, chan os.Signal) {
+func setupTicker() *tickerSync {
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 	errChan := make(chan error, 1)
@@ -112,6 +101,32 @@ func setupTicker() (context.Context, context.CancelFunc, *sync.WaitGroup, chan e
 
 	// Handle OS signals
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+	ticker := tickerSync{
+		Context:       ctx,
+		Cancel:        cancel,
+		Waiter:        &wg,
+		ErrChannel:    errChan,
+		SignalChannel: signalChan,
+	}
 
-	return ctx, cancel, &wg, errChan, signalChan
+	return &ticker
+}
+
+func getDirs(conf config.Config, p string) ([]string, error) {
+	dirs := conf.Dirs()
+	if p != "" {
+		info, err := os.Stat(p)
+		if err != nil {
+			return []string{}, err
+		}
+		if !info.IsDir() {
+			return []string{}, fmt.Errorf("Need to provide an Directory to schedule")
+		}
+		dirs = []string{p}
+	}
+	if len(dirs) == 0 {
+		return []string{}, fmt.Errorf("There has to be atleast one Directory" +
+			"specified in the config for the current OS")
+	}
+	return dirs, nil
 }
