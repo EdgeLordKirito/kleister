@@ -7,6 +7,7 @@ import (
 	"github.com/EdgeLordKirito/wallpapersetter/internal/commands/advise"
 	"github.com/EdgeLordKirito/wallpapersetter/internal/commands/paste"
 	"github.com/EdgeLordKirito/wallpapersetter/internal/commands/schedule"
+	"github.com/EdgeLordKirito/wallpapersetter/internal/commands/stop"
 	"github.com/spf13/cobra"
 )
 
@@ -18,6 +19,7 @@ func main() {
 	rootCmd.AddCommand(paste.Command())
 	rootCmd.AddCommand(schedule.Command())
 	rootCmd.AddCommand(advise.Command())
+	rootCmd.AddCommand(stop.Command())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1) // Let Cobra handle printing the error
